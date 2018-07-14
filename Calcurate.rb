@@ -1,5 +1,7 @@
 #奨学金の月返済金額を算出するプログラムです。
 
+require "rubygems"
+require "spreadsheet"
 
 #奨学金の返済年数を求めるメソッド
 def getHensaiNensu(hensaiSogaku)
@@ -50,6 +52,15 @@ def getTukiHensaigaku(hensaiSogaku, getsuri, hensaiKaisu)
     hensaiSogaku * getsuri * (1 + getsuri) ** hensaiKaisu / ((1 + getsuri) ** hensaiKaisu - 1)
 end
 
+#Excelファイルをインスタンス化する
+book = Spreadsheet::WorkBook.new
+
+#新規シートを作成する
+sheet = book.crate_worksheet
+
+#sheetに名前を設定する
+sheet.name = "奨学金返済計画表"
+
 #ターミナルより返済総額と年利を入力させる
 print "奨学金の返済総額と年利を入力してください(例：1200000 0.16)\n"
 hensaiSogaku, nenri = gets.chomp.split(" ").map(&:to_i)
@@ -81,4 +92,6 @@ puts "奨学金の据置利息のあまりは #{amariSueokiRisoku}円です"
 puts "奨学金の月返済額は #{tukiHensaigaku}円です"
 puts "奨学金の返済で計算不可だった余り金額は #{amariGoukeigaku}円です"
 
+#作成したbookを書き出す
+book.write("scholarnet.xls")
 
