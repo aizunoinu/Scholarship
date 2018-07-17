@@ -1,4 +1,4 @@
-#奨学金の月返済金額を算出するプログラムです。
+#奨学金の返済をシミュレーションするプログラムです。
 
 require "rubygems"
 require "spreadsheet"
@@ -92,6 +92,7 @@ class Scholarship
 
     #奨学金の月返済額（据置利息以外）を算出するメソッド
     def getTukiHensaigaku
+        #返済総額 * 月利 * (1 + 月利) ^ 返済回数 / ((1 + 月利) ^ 返済回数 - 1)
         @hensaiSogaku * @getsuri * (1 + @getsuri) ** @hensaiKaisu / ((1 + @getsuri) ** @hensaiKaisu - 1)
     end
 
@@ -108,7 +109,8 @@ class Scholarship
     end
 
     #奨学金の繰り上げ情報を取得するメソッド
-    def getKuriageKingaku
+    def getKuriageKingaku(kuriageYear, kuriageMonth)
+        #繰り上げ返済情報を元に繰り上げ返済回数を算出する
         hensaiCount = 0
         while(1)
             if @kuriageYear == @hensaiKaishiDate.year && @kuriageMonth == @hensaiKaishiDate.month then
@@ -138,18 +140,34 @@ class Scholarship
         while(1)
             begin
                 print "奨学金の繰り上げ返済を行う年月を入力してください(例：2016年4月)\n"
-                @kuriageYear, @kuriageMonth = gets.chomp.split(/年 || 月/).map(&:to_i)
+                kuriageYear, kuriageMonth = gets.chomp.split(/年 || 月/).map(&:to_i)
                 print "奨学金の繰り上げ返済金額を入力してください(例：1000000)\n"
-                @kuriageKingaku = gets.chomp.to_i
-                if @kuriageYear =~ /^[0-9]+$/ || @kuriageMonth =~ /^[0-9]+$/ || @kuriageKingaku =~ /^[0-9]+$/ then
+                kuriageKingaku = gets.chomp.to_i
+                if kuriageYear =~ /^[0-9]+$/ || kuriageMonth =~ /^[0-9]+$/ || kuriageKingaku =~ /^[0-9]+$/ then
                     puts "入力された値が不正です。もう一度入力してください"
                 else
                     #繰り上げ返済金額より繰り上げを実行する金額を算出する。
-                    #繰り上げ情報を配列に保存する
-                    @kuriageInfomation << @kuriageYear
-                    @kuriageInfomation << @kuriageMonth
-                    @kuriageInfomation << @kuriageKingaku
-                    @kuriageInfomationArray << @kuriageInfomation
+                    kuriageHensaiKingaku = self.getKuriageKingaku(kuriageYear, kuriageMonth)
+                    print "奨学金の繰り上げ金額は #{kuriagehensaiKingaku}円です\n"
+                    while(1)
+                        print "よろしければ\"Yes\"、訂正する場合は\"No\"を入力してください： "
+                        sel = gets.chomp.to_s
+                        if sel == "Yes" then
+                           #繰り上げ情報を配列に保存する
+                            kuriageInfomation << kuriageYear
+                            kuriageInfomation << kuriageMonth
+                            kuriageInfomation << kuriageKingaku
+                            @kuriageInfomationArray << kuriageInfomation
+                        elsif sel == "No" then
+                            print "Noが入力されたので、入力を取り消します。"
+                        else
+                            print "入力できる文字列は\"Yes\"と\"No\"のみです"
+                        end
+
+                        #入力された文字列がYesかNoのときは次の入力へ移動する。
+                        if sel == "Yes" || sel == "No" then
+                            break
+                        end
                 end
             rescue Interrupt #Control + Cが入力されたときの処理
                 puts
