@@ -19,7 +19,7 @@ class Scholarship
         @getsuri = @nenri / 100 / 12
 
         #返済開始日付を算出する。
-        @hensaiKaishiDate = Date.new(@taiyoEndYear, 10, 27)
+        @hensaiDate = Date.new(@taiyoEndYear, 10, 27)
 
         #奨学金の返済年数と返済回数を求める
         @hensaiNensu = self.getHensaiNensu.to_i
@@ -97,39 +97,47 @@ class Scholarship
     end
 
     #奨学金の引き落とし日を算出するメソッド
-    def getHensaiKaishiDate
+    def getHensaiDate(hensaiDate)
         #奨学金の引き落とし日が日曜日の場合は翌日を奨学金の引き落とし日とする
-        if @hensaiKaishiDate.wday == 0 then
-            @hensaiKaishiDate + 1
-        elsif @hensaiKaishiDate.wday == 6 then #奨学金の引き落とし日がと曜日の場合は２日後を奨学金の引き落とし日とする。
-            @hensaiKaishiDate + 2
+        if hensaiDate.wday == 0 then
+            hensaiDate + 1
+        elsif hensaiDate.wday == 6 then #奨学金の引き落とし日がと曜日の場合は２日後を奨学金の引き落とし日とする。
+            hensaiDate + 2
         else
-            @hensaiKaishiDate
+            hensaiDate
         end
     end
 
     #奨学金の繰り上げ情報を取得するメソッド
-    def getKuriageKingaku(kuriageYear, kuriageMonth)
-        #繰り上げ返済情報を元に繰り上げ返済回数を算出する
-        hensaiCount = 0
-        while(1)
-            if @kuriageYear == @hensaiKaishiDate.year && @kuriageMonth == @hensaiKaishiDate.month then
-                if hensaiCount == 0 then
-                    hensaiSogaku = hensaiSogaku - (hensaigaku - tukiSueokiRisoku - risoku)
-                    hensaiCount = hensaiCount + 1
-                    amariGoukeigaku = (amariGoukeigaku / 2) + 1
-                    hensaiKaishiDate = hensaiKaishiDate >> 1
-                elsif hensaiSogaku <= hensaigaku then
-                    hensaiSogaku = 0
-                    hensaiCount = hensaiCount + 1
-                    hensaiKaishiDate = hensaiKaishiDate >> 1
+    def getKuriageKingaku(kuriageYearMonth, kuriageKingaku)
+        #繰り上げ返済希望日が存在するかどうかをチェックする
+        for i in 0..@hensaiSimulationInfomationArray.size - 1
+            hensaiSimulationInfomation = @hensaiSimulationInfomationArray[i]
+
+            if hensaiSimulationInfomation[0] =~ kuriageYearMonth then
+                break
+            end
+        end
+
+        #繰り上げ返済できない場合
+        if i == @hensaiSimulationInfomationArray.size - 1 then
+            false
+        else
+            wKuriageKingaku = 0
+            kuriageStart = i
+            #1回分のみ利息を計算する
+            hensaiSimulationInfomation = @hensaiSimulationInfomationArray[i]
+            risoku = (hensaiSimulationInfomation[1] * @getsuri).to_i
+            kuriageKingaku = kuriageKingaku - risoku
+            wKuriageKingaku = wKuriageKingaku + risoku
+            for i in kuriageStart..@hensaiSimulationInfomationArray.size - 1
+                hensaiSimulationInfomation = @hensaiSimulationInfomationArray[i]
+                #繰り上げできなくなったら終了
+                if kuriageKingaku < hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
                     break
-                else
-                    #返済した金額分、返済総額を減額する。
-                    hensaiSogaku = hensaiSogaku - (hensaigaku - tukiSueokiRisoku - risoku)
-                    hensaiCount = hensaiCount + 1
-                    hensaiKaishiDate = hensaiKaishiDate >> 1
                 end
+                kuriageKingaku = kuriageKingaku - hensaiSimulationInfomation[4] - hensaiSimulationInfomation[5]
+                wKuriageKingaku = wKuriageKingaku + hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
             end
         end
     end
@@ -140,14 +148,17 @@ class Scholarship
         while(1)
             begin
                 print "奨学金の繰り上げ返済を行う年月を入力してください(例：2016年4月)\n"
-                kuriageYear, kuriageMonth = gets.chomp.split(/年 || 月/).map(&:to_i)
+                kuriageYearMonth = gets.chomp
+                kuriageYear, kuriageMonth = kuriageYearMonth.split("年|月").map(&:to_i)
                 print "奨学金の繰り上げ返済金額を入力してください(例：1000000)\n"
                 kuriageKingaku = gets.chomp.to_i
+
+                #入力された数値が不正な場合はエラーとする
                 if kuriageYear =~ /^[0-9]+$/ || kuriageMonth =~ /^[0-9]+$/ || kuriageKingaku =~ /^[0-9]+$/ then
                     puts "入力された値が不正です。もう一度入力してください"
                 else
                     #繰り上げ返済金額より繰り上げを実行する金額を算出する。
-                    kuriageHensaiKingaku = self.getKuriageKingaku(kuriageYear, kuriageMonth)
+                    kuriageHensaiKingaku = self.getKuriageKingaku(kuriageYearMonth, kuriageKingaku)
                     print "奨学金の繰り上げ金額は #{kuriagehensaiKingaku}円です\n"
                     while(1)
                         print "よろしければ\"Yes\"、訂正する場合は\"No\"を入力してください： "
@@ -168,6 +179,7 @@ class Scholarship
                         if sel == "Yes" || sel == "No" then
                             break
                         end
+                    end
                 end
             rescue Interrupt #Control + Cが入力されたときの処理
                 puts
@@ -188,7 +200,6 @@ class Scholarship
         sheet.name = "奨学金返済計画表"
 
         #Excelファイルに返済回数、返済金額、返済金額内訳を出力する
-        hensaiCount = 0
         sheet[0, 0] = "奨学金返済計画"
         sheet[1, 0] = "残り回数"
         sheet[1, 1] = "奨学金残額"
@@ -199,58 +210,91 @@ class Scholarship
         sheet[1, 6] = "利息"
         sheet[1, 7] = "端数金額"
         sheet[1, 8] = "奨学金引落後残額"
-        while(1)
-            #月返済額の利息を計算する。
-            risoku = (@hensaiSogaku * @getsuri).to_i
-            #27日が休日かどうか判定し、休日のときはよく月曜日を返済日として返す
-            whensaiKaishiDate = self.getHensaiKaishiDate
-            if hensaiCount == 0 then
-                sheet[hensaiCount + 2, 0] = @hensaiKaisu - hensaiCount
-                sheet[hensaiCount + 2, 1] = @hensaiSogaku
-                sheet[hensaiCount + 2, 2] = "#{whensaiKaishiDate.year}年#{whensaiKaishiDate.month}月#{whensaiKaishiDate.day}日"
-                sheet[hensaiCount + 2, 3] = (@hensaigaku + @amariGoukeigaku / 2).to_i
-                sheet[hensaiCount + 2, 4] = @hensaigaku - @tukiSueokiRisoku - risoku
-                sheet[hensaiCount + 2, 5] = @tukiSueokiRisoku
-                sheet[hensaiCount + 2, 6] = risoku
-                sheet[hensaiCount + 2, 7] = (@amariGoukeigaku / 2).to_i
-                sheet[hensaiCount + 2, 8] = @hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
-                @hensaiSogaku = @hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
-                hensaiCount = hensaiCount + 1
-                @amariGoukeigaku = (@amariGoukeigaku / 2).to_i + 1
-                @hensaiKaishiDate = @hensaiKaishiDate >> 1
-            elsif @hensaiSogaku <= @hensaigaku then
-                sheet[hensaiCount + 2, 0] = @hensaiKaisu - hensaiCount
-                sheet[hensaiCount + 2, 1] = @hensaiSogaku
-                sheet[hensaiCount + 2, 2] = "#{whensaiKaishiDate.year}年#{whensaiKaishiDate.month}月#{whensaiKaishiDate.day}日"
-                sheet[hensaiCount + 2, 3] = @hensaigaku + @amariGoukeigaku
-                sheet[hensaiCount + 2, 4] = @hensaigaku - @tukiSueokiRisoku - risoku
-                sheet[hensaiCount + 2, 5] = @tukiSueokiRisoku
-                sheet[hensaiCount + 2, 6] = risoku
-                sheet[hensaiCount + 2, 7] = @amariGoukeigaku
-                sheet[hensaiCount + 2, 8] = 0
-                @hensaiSogaku = 0
-                hensaiCount = hensaiCount + 1
-                @hensaiKaishiDate = @hensaiKaishiDate >> 1
-                break
-            else
-                sheet[hensaiCount + 2, 0] = @hensaiKaisu - hensaiCount
-                sheet[hensaiCount + 2, 1] = @hensaiSogaku
-                sheet[hensaiCount + 2, 2] = "#{whensaiKaishiDate.year}年#{whensaiKaishiDate.month}月#{whensaiKaishiDate.day}日"
-                sheet[hensaiCount + 2, 3] = @hensaigaku
-                sheet[hensaiCount + 2, 4] = @hensaigaku - @tukiSueokiRisoku - risoku
-                sheet[hensaiCount + 2, 5] = @tukiSueokiRisoku
-                sheet[hensaiCount + 2, 6] = risoku
-                sheet[hensaiCount + 2, 7] = 0
-                sheet[hensaiCount + 2, 8] = @hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
-                #返済した金額分、返済総額を減額する。
-                @hensaiSogaku = @hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
-                hensaiCount = hensaiCount + 1
-                @hensaiKaishiDate = @hensaiKaishiDate >> 1
-            end
+
+        #配列の中身をファイルに出力する
+        for i in 0..@hensaiSimulationInfomationArray.size - 1
+            #インスタンス変数hensaiSimulationInfomationArrayから返済情報を一つ取り出す
+            hensaiSimulationInfomation = @hensaiSimulationInfomationArray[i]
+            sheet[i + 2, 0] = hensaiSimulationInfomation[0]
+            sheet[i + 2, 1] = hensaiSimulationInfomation[1]
+            sheet[i + 2, 2] = hensaiSimulationInfomation[2]
+            sheet[i + 2, 3] = hensaiSimulationInfomation[3]
+            sheet[i + 2, 4] = hensaiSimulationInfomation[4]
+            sheet[i + 2, 5] = hensaiSimulationInfomation[5]
+            sheet[i + 2, 6] = hensaiSimulationInfomation[6]
+            sheet[i + 2, 7] = hensaiSimulationInfomation[7]
+            sheet[i + 2, 8] = hensaiSimulationInfomation[8]
         end
 
         #作成したbookを書き出す
-        book.write("scholarnet.xls")
+        book.write("Scholarship.xls")
+    end
+
+    #奨学金の通常返済シミュレーション結果を作成するメソッド
+    def hensaiSimulation
+        #Excelファイルに返済回数、返済金額、返済金額内訳を出力する
+        hensaiCount = 0
+        #インスタンス変数からローカル変数に値をコピーする
+        hensaiKaisu = @hensaiKaisu
+        hensaiSogaku = @hensaiSogaku
+        amariGoukeigaku = @amariGoukeigaku
+        hensaiDate = @hensaiDate
+
+        @hensaiSimulationInfomationArray = []
+        #シミュレーション結果を作成する
+        while(1)
+            #月返済額の利息を計算する。
+            risoku = (hensaiSogaku * @getsuri).to_i
+            #27日が休日かどうか判定し、休日のときはよく月曜日を返済日として返す
+            whensaiDate = self.getHensaiDate(hensaiDate)
+            hensaiSimulationInfomation = []
+            if hensaiCount == 0 then
+                hensaiSimulationInfomation << hensaiKaisu - hensaiCount
+                hensaiSimulationInfomation << hensaiSogaku
+                hensaiSimulationInfomation << "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
+                hensaiSimulationInfomation << (@hensaigaku + amariGoukeigaku / 2).to_i
+                hensaiSimulationInfomation << @hensaigaku - @tukiSueokiRisoku - risoku
+                hensaiSimulationInfomation << @tukiSueokiRisoku
+                hensaiSimulationInfomation << risoku
+                hensaiSimulationInfomation << (amariGoukeigaku / 2).to_i
+                hensaiSimulationInfomation << hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
+                @hensaiSimulationInfomationArray << hensaiSimulationInfomation
+                hensaiSogaku = hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
+                hensaiCount = hensaiCount + 1
+                amariGoukeigaku = (amariGoukeigaku / 2).to_i + 1
+                hensaiDate = hensaiDate >> 1
+            elsif hensaiSogaku <= @hensaigaku then
+                hensaiSimulationInfomation << hensaiKaisu - hensaiCount
+                hensaiSimulationInfomation << hensaiSogaku
+                hensaiSimulationInfomation << "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
+                hensaiSimulationInfomation << @hensaigaku + amariGoukeigaku
+                hensaiSimulationInfomation << @hensaigaku - @tukiSueokiRisoku - risoku
+                hensaiSimulationInfomation << @tukiSueokiRisoku
+                hensaiSimulationInfomation << risoku
+                hensaiSimulationInfomation << amariGoukeigaku
+                hensaiSimulationInfomation << 0
+                @hensaiSimulationInfomationArray << hensaiSimulationInfomation
+                hensaiSogaku = 0
+                hensaiCount = hensaiCount + 1
+                hensaiDate = hensaiDate >> 1
+                break
+            else
+                hensaiSimulationInfomation << hensaiKaisu - hensaiCount
+                hensaiSimulationInfomation << hensaiSogaku
+                hensaiSimulationInfomation << "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
+                hensaiSimulationInfomation << @hensaigaku
+                hensaiSimulationInfomation << @hensaigaku - @tukiSueokiRisoku - risoku
+                hensaiSimulationInfomation << @tukiSueokiRisoku
+                hensaiSimulationInfomation << risoku
+                hensaiSimulationInfomation << 0
+                hensaiSimulationInfomation << hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
+                @hensaiSimulationInfomationArray << hensaiSimulationInfomation
+                #返済した金額分、返済総額を減額する。
+                hensaiSogaku = hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
+                hensaiCount = hensaiCount + 1
+                hensaiDate = hensaiDate >> 1
+            end
+        end
     end
 end
 
@@ -266,13 +310,21 @@ taiyoEndYear = gets.chomp.to_i
 #Scholarshipクラスをインスタンス化する
 scholarship = Scholarship.new(hensaiSogaku, nenri, taiyoEndYear)
 
+#奨学金の返済シミュレーションに使用するアイテムを算出する
+scholarship.calcurateItems
+
+#奨学金の通常の返済シミュレーション結果を作成する
+scholarship.hensaiSimulation
+
 puts "*****************************************************"
 print "奨学金の繰り上げ返済を希望しますか？(Yes / No)： "
 sel = gets.chomp
 puts "*****************************************************"
+
+#奨学金を繰り上げ返済する場合は、繰り上げ返済情報を入力する。
 if sel == "Yes" then
     scholarship.inputKuriageHensaiInfomation
 end
 
-scholarship.calcurateItems
+#奨学金のシミュレーション結果を出力する。
 scholarship.outputWrite
