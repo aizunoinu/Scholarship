@@ -196,7 +196,8 @@ class Scholarship
                         puts "シミュレーションを実行した日付より後の日付を入力してください。"
                     else
                         #繰り上げ返済金額より繰り上げを実行する金額を算出する。
-                        kuriageHensaiKingaku, kuriageHensaiKaisu, kuriageHensaiSimulationInfomationArray = self.getKuriageKingaku(kuriageYearMonth, kuriageKingaku)
+                        kuriageHensaiKingaku, kuriageHensaiKaisu, kuriageHensaiSimulationInfomationArray
+                                            = self.getKuriageKingaku(kuriageYearMonth, kuriageKingaku)
                         print "奨学金の繰り上げ金額は #{kuriageHensaiKingaku}円です\n"
                         print "奨学金の繰り上げ回数は #{kuriageHensaiKaisu}回です\n"
                         while(1)
