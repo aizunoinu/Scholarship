@@ -150,9 +150,11 @@ class Scholarship
 
             #繰り上げ金額残りで返済できる金額を算出する
             kuriageStart = i
+            endFLG = 0
             for j in kuriageStart..hensaiSimulationInfomationArray.size - 1
                 #繰り上げ金額の残金が、元金と据置利息の和より小さくなった時、それ以上繰り上げ返済ができなくなったことを意味する
                 if kuriageKingaku < hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5]
+                    endFLG = 1
                     break
                 end
 
@@ -168,7 +170,12 @@ class Scholarship
                 wKuriageSueokiRisoku = wKuriageSueokiRisoku + hensaiSimulationInfomationArray[j][5]
             end
 
-            nextHensaiSogaku = hensaiSimulationInfomationArray[j][1]
+
+            if endFLG == 1 then
+                nextHensaiSogaku = hensaiSimulationInfomationArray[j][1]
+            else
+                nextHensaiSogaku = 0
+            end
 
             #繰り上げ返済が実行される月の返済情報を編集する。
             hensaiSimulationInfomationArray[i][3] = wKuriageKingaku
@@ -182,7 +189,7 @@ class Scholarship
         end
 
         #完済したときはこの処理を実施しないように条件で判定する。
-        if kuriageKingaku < hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5]
+        if endFLG == 1 then
             #奨学金の繰り上げ返済を消化した後の返済シミュレーション結果を作成する。
             start = j
             for i in start..hensaiSimulationInfomationArray.size - 1
