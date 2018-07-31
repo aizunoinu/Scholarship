@@ -20,7 +20,7 @@ class Scholarship
 
         #返済開始日付を算出する。
         @hensaiDate = Date.new(@taiyoEndYear, 10, 27)
-        @kuriageHensaiDate = Date.new(@taiyoEndYear, 10, 27)
+        @kuriageHensaiDate = @hensaiDate.clone
 
         #奨学金の返済年数と返済回数を求める
         @hensaiNensu = self.getHensaiNensu.to_i
@@ -116,11 +116,13 @@ class Scholarship
         kuriageHensaiSimulationInfomationArray = []
         hensaiSimulationInfomationArray = @hensaiSimulationInfomationArray.clone
         kuriageHensaiDate = @kuriageHensaiDate.clone
+        endFLG = 1
 
         #繰り上げ返済希望日までの配列の情報をコピーする。
         for i in 0..hensaiSimulationInfomationArray.size - 1
             #繰り上げ返済希望日を含む日付になった時、配列のコピーを終了する。
             if hensaiSimulationInfomationArray[i][2] =~ /#{kuriageYearMonth}/ then
+                endFLG = 0
                 break
             end
 
@@ -130,8 +132,8 @@ class Scholarship
         end
 
         #入力された繰り上げ年月が奨学金の繰り上げ返済の期間に含まれていなかった
-        if kuriageHensaiSimulationInfomationArray.size == hensaiSimulationInfomationArray.size then
-            return -1, -1, kuriageHensaiSimulationInfomationArray
+        if endFLG == 1 then
+            return -1, -1, -1, kuriageHensaiSimulationInfomationArray
         else
             wKuriageKingaku = 0
             wKuriageKaisu = 0
@@ -150,17 +152,17 @@ class Scholarship
 
             #繰り上げ金額残りで返済できる金額を算出する
             kuriageStart = i
-            endFLG = 0
+            endFLG = 1
             for j in kuriageStart..hensaiSimulationInfomationArray.size - 1
                 #繰り上げ金額の残金が、元金と据置利息の和より小さくなった時、それ以上繰り上げ返済ができなくなったことを意味する
                 if kuriageKingaku < hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5]
-                    endFLG = 1
+                    endFLG = 0
                     break
                 end
 
                 #入力された繰り上げ返済金額の残金を求める
                 kuriageKingaku = kuriageKingaku\
-                                    - (hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5])
+                                    -  (hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5])
 
                 #いくら繰り上げ返済可能であるか算出する。
                 wKuriageKingaku = wKuriageKingaku\
@@ -171,7 +173,7 @@ class Scholarship
             end
 
 
-            if endFLG == 1 then
+            if endFLG == 0 then
                 nextHensaiSogaku = hensaiSimulationInfomationArray[j][1]
             else
                 nextHensaiSogaku = 0
@@ -189,7 +191,7 @@ class Scholarship
         end
 
         #完済したときはこの処理を実施しないように条件で判定する。
-        if endFLG == 1 then
+        if endFLG == 0 then
             #奨学金の繰り上げ返済を消化した後の返済シミュレーション結果を作成する。
             start = j
             for i in start..hensaiSimulationInfomationArray.size - 1
@@ -202,7 +204,7 @@ class Scholarship
         end
 
         #奨学金の繰り上げ返済シミュレーション結果をリターンする。
-        return wKuriageKingaku, wKuriageKaisu, kuriageHensaiSimulationInfomationArray
+        return wKuriageKingaku, wKuriageKaisu, nextHensaiSogaku, kuriageHensaiSimulationInfomationArray
     end
 
     #繰り上げ返済を実施する場合、繰り上げ情報を入力するメソッド
@@ -211,11 +213,21 @@ class Scholarship
 
         @kuriageInfomationArray = []
         inputKuriageCount = 1
-        while(1)
+        hensaiZankin = @hensaiSogaku
+        errorFLG = 0
+        while(1) do
             begin
-                puts
+                #奨学金の残額がなくなったため、繰り上げ返済を実施することができなくなった場合
+                if hensaiZankin <= @hensaigaku * 2 then
+                    puts
+                    puts "奨学金の繰り上げ可能金額（月返済額 * 2ヶ月分）を下回りました。"
+                    puts "繰り上げシミュレーションを終了します。"
+                    puts
+                    break
+                end
                 #繰り上げ返済の情報が２回めのときは入力終了の選択肢を一つ追加する
-                if inputKuriageCount >= 2 then
+                if inputKuriageCount >= 2 && errorFLG == 0 then
+                    puts
                     print "次の繰り上げ返済情報を入力しますか？（Yes or No）：  "
                     sel = gets.chomp
                     if sel != "Yes" then
@@ -223,6 +235,9 @@ class Scholarship
                     end
                     puts
                 end
+                puts
+                puts "奨学金の残額は #{hensaiZankin}円です。"
+                puts
                 print "#{inputKuriageCount}回目の繰り上げ返済情報を入力してください\n"
                 print "奨学金の繰り上げ返済を行う年を入力してください(例：2016)\n"
                 kuriageYear = gets.chomp.to_i
@@ -238,23 +253,25 @@ class Scholarship
                 #入力された数値が不正な場合はエラーとする
                 if kuriageYear =~ /^[0-9]+$/ || kuriageMonth =~ /^[0-9]+$/ || kuriageKingaku =~ /^[0-9]+$/ then
                     puts "入力された値が不正です。もう一度入力してください"
+                    errorFLG = 1
                 elsif kuriageKingaku < @hensaigaku * 2 then
                     puts "繰り上げ返済額が2ヶ月分の月返済額より大きくなければなりません。"
                     puts "もう一度入力してください"
+                    errorFLG = 1
                 else
                     #入力された日付が既に繰り上げ返済のシミュレーションを実行した年月より前だった場合エラーフラグを立てる
                     errorFLG = 0
-                    #for i in 0..@kuriageInfomationArray.size - 1
-                    #    kuriageInfomation = @kuriageInfomationArray[i]
-                    #    if kuriageYearMonth.casecmp(kuriageInfomation[0]) == -1 then
-                    #        puts kuriageYearMonth
-                    #        puts kuriageInfomation[0]
-                    #        puts kuriageYearMonth.hash
-                    #        puts kuriageInfomation[0].hash
-                    #        errorFLG = 1
-                    #        break
-                    #    end
-                    #end
+                    for i in 0..@kuriageInfomationArray.size - 1
+                        kuriageInfomation = @kuriageInfomationArray[i]
+                        if "#{kuriageYearMonth}" < "#{kuriageInfomation[0]}" then
+                            puts kuriageYearMonth
+                            puts kuriageInfomation[0]
+                            puts kuriageYearMonth.hash
+                            puts kuriageInfomation[0].hash
+                            errorFLG = 1
+                            break
+                        end
+                    end
 
                     #エラーフラグが立っている場合はエラーとし、再度入力させる
                     if errorFLG == 1 then
@@ -263,7 +280,7 @@ class Scholarship
                         puts "シミュレーションを実行した日付より後の日付を入力してください。"
                     else
                         #「繰り上げ金額」「繰り上げ回数」「繰り上げ返済シミュレーション結果」を求める
-                        kuriageHensaiKingaku, kuriageHensaiKaisu, kuriageHensaiSimulationInfomationArray\
+                        kuriageHensaiKingaku, kuriageHensaiKaisu, nokoriHensaiSogaku, kuriageHensaiSimulationInfomationArray\
                                             = self.kuriageHensaiSimulation(kuriageYearMonth, kuriageKingaku)
 
                         #繰り上げ年月が返済期間に含まれていなかったため、繰り上げシミュレーションを実施できなかった時
@@ -272,17 +289,19 @@ class Scholarship
                             puts "入力された繰り上げ年月が奨学金の返済期間外です。"
                             puts "奨学金の繰り上げ返済シミュレーションを実施することができません。"
                             puts "もう一度入力してください。"
+                            errorFLG = 1
                         else
                             puts
                             print "奨学金の繰り上げ金額は #{kuriageHensaiKingaku}円です\n"
                             print "奨学金の繰り上げ回数は #{kuriageHensaiKaisu}回です\n"
-                            while(1)
+                            while(1) do
                                 puts
                                 print "よろしければ【Yes】、訂正する場合は【No】を入力してください： "
                                 sel = gets.chomp.to_s
 
                                 #入力された文字列が"Yes"の時
                                 if sel == "Yes" then
+                                    hensaiZankin = nokoriHensaiSogaku
                                     #繰り上げ情報を配列に保存する
                                     kuriageInfomation = []
                                     kuriageInfomation << kuriageYearMonth
@@ -292,6 +311,7 @@ class Scholarship
                                     inputKuriageCount = inputKuriageCount + 1
                                 elsif sel == "No" then
                                     print "Noが入力されたので、入力を取り消します。\n"
+                                    errorFLG = 1
                                 else
                                     print "入力できる文字列は\"Yes\"と\"No\"のみです。\n"
                                 end
@@ -337,16 +357,15 @@ class Scholarship
         #配列の中身をファイルに出力する
         for i in 0..@hensaiSimulationInfomationArray.size - 1
             #インスタンス変数hensaiSimulationInfomationArrayから返済情報を一つ取り出す
-            hensaiSimulationInfomation = @hensaiSimulationInfomationArray[i]
-            sheet[i + 2, 0] = hensaiSimulationInfomation[0]
-            sheet[i + 2, 1] = hensaiSimulationInfomation[1]
-            sheet[i + 2, 2] = hensaiSimulationInfomation[2]
-            sheet[i + 2, 3] = hensaiSimulationInfomation[3]
-            sheet[i + 2, 4] = hensaiSimulationInfomation[4]
-            sheet[i + 2, 5] = hensaiSimulationInfomation[5]
-            sheet[i + 2, 6] = hensaiSimulationInfomation[6]
-            sheet[i + 2, 7] = hensaiSimulationInfomation[7]
-            sheet[i + 2, 8] = hensaiSimulationInfomation[8]
+            sheet[i + 2, 0] = @hensaiSimulationInfomationArray[i][0]
+            sheet[i + 2, 1] = @hensaiSimulationInfomationArray[i][1]
+            sheet[i + 2, 2] = @hensaiSimulationInfomationArray[i][2]
+            sheet[i + 2, 3] = @hensaiSimulationInfomationArray[i][3]
+            sheet[i + 2, 4] = @hensaiSimulationInfomationArray[i][4]
+            sheet[i + 2, 5] = @hensaiSimulationInfomationArray[i][5]
+            sheet[i + 2, 6] = @hensaiSimulationInfomationArray[i][6]
+            sheet[i + 2, 7] = @hensaiSimulationInfomationArray[i][7]
+            sheet[i + 2, 8] = @hensaiSimulationInfomationArray[i][8]
         end
 
         #作成したbookを書き出す
@@ -366,7 +385,7 @@ class Scholarship
         #奨学金の返済シミュレーション結果を格納する配列を初期化する
         @hensaiSimulationInfomationArray = []
         #シミュレーション結果を作成する
-        while(1)
+        while(1) do
             #月返済額の利息を計算する。
             risoku = (hensaiSogaku * @getsuri).to_i
 
@@ -444,7 +463,7 @@ begin
     #奨学金の通常の返済シミュレーション結果を作成する
     scholarship.hensaiSimulation
 
-    while(1)
+    while(1) do
         puts
         print "繰り上げ返済をする場合は【Yes】、しない場合は【No】を入力してください：  "
         sel = gets.chomp
