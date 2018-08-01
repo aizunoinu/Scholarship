@@ -131,6 +131,7 @@ class Scholarship
             end
 
             #puts "#{hensaiSimulationInfomation[2]} と #{kuriageYearMonth}"
+            hensaiSimulationInfomation[9] = 1
             kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomation
             kuriageHensaiDate = kuriageHensaiDate >> 1
         end
@@ -195,6 +196,7 @@ class Scholarship
             hensaiSimulationInfomation[6] = risoku
             hensaiSimulationInfomation[7] = 0
             hensaiSimulationInfomation[8] = nextHensaiSogaku
+            hensaiSimulationInfomation[9] = 1
             kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomation
             kuriageHensaiDate = kuriageHensaiDate >> 1
         end
@@ -239,12 +241,20 @@ class Scholarship
                 #繰り上げ返済の情報が２回めのときは入力終了の選択肢を一つ追加する
                 if inputKuriageCount >= 2 && errorFLG == 0 then
                     puts
-                    print "次の繰り上げ返済情報を入力しますか？（Yes or No）：  "
-                    sel = gets.chomp
-                    if sel != "Yes" then
+                    while(1) do
+                        print "次の繰り上げ返済情報を入力しますか？（Yes or No）：  "
+                        sel = gets.chomp
+                        if sel == "Yes" || sel == "No" then
+                            break
+                        else
+                            puts "YesとNo以外が入力されました。"
+                        end
+                        puts
+                    end
+
+                    if sel == "No" then
                         break
                     end
-                    puts
                 end
                 puts
                 puts "奨学金の残額は #{hensaiZankin}円です。"
@@ -272,15 +282,13 @@ class Scholarship
                 else
                     #入力された日付が既に繰り上げ返済のシミュレーションを実行した年月より前だった場合エラーフラグを立てる
                     errorFLG = 0
-                    for i in 0..@kuriageInfomationArray.size - 1
-                        kuriageInfomation = @kuriageInfomationArray[i]
-                        if "#{kuriageYearMonth}" < "#{kuriageInfomation[0]}" then
-                            #puts kuriageYearMonth
-                            #puts kuriageInfomation[0]
-                            #puts kuriageYearMonth.hash
-                            #puts kuriageInfomation[0].hash
-                            errorFLG = 1
-                            break
+                    for i in 0..@hensaiSimulationInfomationArray.size - 1
+                        #繰り上げ返済希望日に繰り上げ返済が組まれているか確認する。
+                        if @hensaiSimulationInfomationArray[i][2] =~ /#{kuriageYearMonth}/ then
+                            if @hensaiSimulationInfomationArray[i][9] == 1 then
+                                errorFLG = 1
+                                break
+                            end
                         end
                     end
 
@@ -415,6 +423,7 @@ class Scholarship
                 hensaiSimulationInfomation << risoku
                 hensaiSimulationInfomation << (amariGoukeigaku / 2).to_i
                 hensaiSimulationInfomation << hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
+                hensaiSimulationInfomation << 0
                 @hensaiSimulationInfomationArray << hensaiSimulationInfomation
                 hensaiSogaku = hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
                 hensaiCount = hensaiCount + 1
@@ -429,6 +438,7 @@ class Scholarship
                 hensaiSimulationInfomation << @tukiSueokiRisoku
                 hensaiSimulationInfomation << risoku
                 hensaiSimulationInfomation << amariGoukeigaku
+                hensaiSimulationInfomation << 0
                 hensaiSimulationInfomation << 0
                 @hensaiSimulationInfomationArray << hensaiSimulationInfomation
                 hensaiSogaku = 0
@@ -445,6 +455,7 @@ class Scholarship
                 hensaiSimulationInfomation << risoku
                 hensaiSimulationInfomation << 0
                 hensaiSimulationInfomation << hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
+                hensaiSimulationInfomation << 0
                 @hensaiSimulationInfomationArray << hensaiSimulationInfomation
                 #返済した金額分、返済総額を減額する。
                 hensaiSogaku = hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
