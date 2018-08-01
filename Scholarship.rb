@@ -117,17 +117,21 @@ class Scholarship
         hensaiSimulationInfomationArray = @hensaiSimulationInfomationArray.clone
         kuriageHensaiDate = @kuriageHensaiDate.clone
         endFLG = 1
+        #puts "繰り上げ返済シミュレーション時:  #{hensaiSimulationInfomationArray.object_id}"
 
+        #puts "hensaiSimulationInfomationArray.size:  #{hensaiSimulationInfomationArray.size}"
         #繰り上げ返済希望日までの配列の情報をコピーする。
         for i in 0..hensaiSimulationInfomationArray.size - 1
+            hensaiSimulationInfomation = hensaiSimulationInfomationArray[i].clone
             #繰り上げ返済希望日を含む日付になった時、配列のコピーを終了する。
-            if hensaiSimulationInfomationArray[i][2] =~ /#{kuriageYearMonth}/ then
+            if hensaiSimulationInfomation[2] =~ /#{kuriageYearMonth}/ then
+                #puts "i:  #{i}"
                 endFLG = 0
                 break
             end
 
             #puts "#{hensaiSimulationInfomation[2]} と #{kuriageYearMonth}"
-            kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomationArray[i]
+            kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomation
             kuriageHensaiDate = kuriageHensaiDate >> 1
         end
 
@@ -142,7 +146,7 @@ class Scholarship
 
             #繰り上げ返済時は利息がかからない
             #risoku = 0
-            risoku = (hensaiSimulationInfomationArray[i][1] * @getsuri).to_i
+            risoku = (hensaiSimulationInfomation[1] * @getsuri).to_i
 
             #繰り上げ金額から１回分の利息を減算する。
             kuriageKingaku = kuriageKingaku - risoku
@@ -154,39 +158,44 @@ class Scholarship
             kuriageStart = i
             endFLG = 1
             for j in kuriageStart..hensaiSimulationInfomationArray.size - 1
+                hensaiSimulationInfomation = hensaiSimulationInfomationArray[j].clone
                 #繰り上げ金額の残金が、元金と据置利息の和より小さくなった時、それ以上繰り上げ返済ができなくなったことを意味する
-                if kuriageKingaku < hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5]
+                if kuriageKingaku < hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
+                    #puts "kuriageKingaku:  #{kuriageKingaku}"
+                    #puts "hensaiSimulationInfomation[4]:  #{hensaiSimulationInfomation[4]}"
+                    #puts "hensaiSimulationInfomation[5]:  #{hensaiSimulationInfomation[5]}"
+                    #puts "j:  #{j}"
                     endFLG = 0
                     break
                 end
 
                 #入力された繰り上げ返済金額の残金を求める
                 kuriageKingaku = kuriageKingaku\
-                                    -  (hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5])
+                                    -  (hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5])
 
                 #いくら繰り上げ返済可能であるか算出する。
                 wKuriageKingaku = wKuriageKingaku\
-                                    + hensaiSimulationInfomationArray[j][4] + hensaiSimulationInfomationArray[j][5]
+                                    + hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
                 wKuriageKaisu = wKuriageKaisu + 1
-                wKuriageMotoKingaku = wKuriageMotoKingaku + hensaiSimulationInfomationArray[j][4]
-                wKuriageSueokiRisoku = wKuriageSueokiRisoku + hensaiSimulationInfomationArray[j][5]
+                wKuriageMotoKingaku = wKuriageMotoKingaku + hensaiSimulationInfomation[4]
+                wKuriageSueokiRisoku = wKuriageSueokiRisoku + hensaiSimulationInfomation[5]
             end
 
 
             if endFLG == 0 then
-                nextHensaiSogaku = hensaiSimulationInfomationArray[j][1]
+                nextHensaiSogaku = hensaiSimulationInfomation[1]
             else
                 nextHensaiSogaku = 0
             end
 
             #繰り上げ返済が実行される月の返済情報を編集する。
-            hensaiSimulationInfomationArray[i][3] = wKuriageKingaku
-            hensaiSimulationInfomationArray[i][4] = wKuriageMotoKingaku
-            hensaiSimulationInfomationArray[i][5] = wKuriageSueokiRisoku
-            hensaiSimulationInfomationArray[i][6] = risoku
-            hensaiSimulationInfomationArray[i][7] = 0
-            hensaiSimulationInfomationArray[i][8] = nextHensaiSogaku
-            kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomationArray[i]
+            hensaiSimulationInfomation[3] = wKuriageKingaku
+            hensaiSimulationInfomation[4] = wKuriageMotoKingaku
+            hensaiSimulationInfomation[5] = wKuriageSueokiRisoku
+            hensaiSimulationInfomation[6] = risoku
+            hensaiSimulationInfomation[7] = 0
+            hensaiSimulationInfomation[8] = nextHensaiSogaku
+            kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomation
             kuriageHensaiDate = kuriageHensaiDate >> 1
         end
 
@@ -195,10 +204,11 @@ class Scholarship
             #奨学金の繰り上げ返済を消化した後の返済シミュレーション結果を作成する。
             start = j
             for i in start..hensaiSimulationInfomationArray.size - 1
+                hensaiSimulationInfomation = hensaiSimulationInfomationArray[i].clone
                 #27日が休日かどうか判定し、休日のときは翌月曜日を返済日として返す
                 whensaiDate = self.getHensaiDate(kuriageHensaiDate)
-                hensaiSimulationInfomationArray[i][2] = "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
-                kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomationArray[i]
+                hensaiSimulationInfomation[2] = "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
+                kuriageHensaiSimulationInfomationArray << hensaiSimulationInfomation
                 kuriageHensaiDate = kuriageHensaiDate >> 1
             end
         end
@@ -217,6 +227,7 @@ class Scholarship
         errorFLG = 0
         while(1) do
             begin
+                #puts "繰り上げ返済入力時:  #{@hensaiSimulationInfomationArray.object_id}"
                 #奨学金の残額がなくなったため、繰り上げ返済を実施することができなくなった場合
                 if hensaiZankin <= @hensaigaku * 2 then
                     puts
@@ -264,10 +275,10 @@ class Scholarship
                     for i in 0..@kuriageInfomationArray.size - 1
                         kuriageInfomation = @kuriageInfomationArray[i]
                         if "#{kuriageYearMonth}" < "#{kuriageInfomation[0]}" then
-                            puts kuriageYearMonth
-                            puts kuriageInfomation[0]
-                            puts kuriageYearMonth.hash
-                            puts kuriageInfomation[0].hash
+                            #puts kuriageYearMonth
+                            #puts kuriageInfomation[0]
+                            #puts kuriageYearMonth.hash
+                            #puts kuriageInfomation[0].hash
                             errorFLG = 1
                             break
                         end
