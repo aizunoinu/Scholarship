@@ -45,7 +45,7 @@ class Scholarship
         @hensaigaku = @tukiHensaigaku + @tukiSueokiRisoku
 
         #毎月奨学金を返済していった場合最終的に支払う奨学金の総額を算出する。
-        @hensaiSogaku2 = @hensaigaku * 240 + @amariGoukeigaku
+        @nomalHensaiSogaku = @hensaigaku * 240 + @amariGoukeigaku
     end
 
     #奨学金の返済年数を求めるメソッド
@@ -335,6 +335,14 @@ class Scholarship
         end
     end
 
+    #繰り上げ返済シミュレーション後の合計返済金額を算出するメソッド
+    def getKuriageTotalKingaku
+        @kuriageTotalKingaku = 0
+        for i in 0..@hensaiSimulationInfomationArray.size - 1
+            @kuriageTotalKingaku = @kuriageTotalKingaku + @hensaiSimulationInfomationArray[i][3]
+        end
+    end
+
     #奨学金の返済シミュレーション結果を出力するメソッド
     def outputWrite
         #Excelファイルをインスタンス化する
@@ -358,6 +366,9 @@ class Scholarship
         sheet[1, 7] = "端数金額"
         sheet[1, 8] = "奨学金引落後残額"
 
+        #繰り上げフラグ
+        kuriageFLG = 0
+
         #配列の中身をファイルに出力する
         for i in 0..@hensaiSimulationInfomationArray.size - 1
             #インスタンス変数hensaiSimulationInfomationArrayから返済情報を一つ取り出す
@@ -370,6 +381,15 @@ class Scholarship
             sheet[i + 2, 6] = @hensaiSimulationInfomationArray[i][6]
             sheet[i + 2, 7] = @hensaiSimulationInfomationArray[i][7]
             sheet[i + 2, 8] = @hensaiSimulationInfomationArray[i][8]
+            kuriageFLG = kuriageFLG + @hensaiSimulationInfomationArray[i][9]
+        end
+
+        #繰り上げが実行されている時
+        if kuriageFLG != 0 then
+            sheet[i + 3, 2] = "返済総額"
+            sheet[i + 3, 3] = "#{@kuriageTotalKingaku}円"
+            sheet[i + 4, 2] = "繰り上げ差額"
+            sheet[i + 4, 3] = "#{@nomalHensaiSogaku - @kuriageTotalKingaku}円"
         end
 
         #作成したbookを書き出す
@@ -478,6 +498,7 @@ begin
         #奨学金を繰り上げ返済する場合は、繰り上げ返済情報を入力する。
         if sel == "Yes" then
             scholarship.inputKuriageHensaiInfomation
+            scholarship.getKuriageTotalKingaku
         end
 
         if sel == "Yes" || sel == "No" then
