@@ -171,11 +171,10 @@ class Scholarship
 
                 #入力された繰り上げ返済金額の残金を求める
                 kuriageKingaku = kuriageKingaku\
-                                    -  (hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5])
-
+                        -  (hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5] + hensaiSimulationInfomation[7])
                 #いくら繰り上げ返済可能であるか算出する。
                 wKuriageKingaku = wKuriageKingaku\
-                                    + hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
+                        + hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5] + hensaiSimulationInfomation[7]
                 wKuriageKaisu = wKuriageKaisu + 1
                 wKuriageMotoKingaku = wKuriageMotoKingaku + hensaiSimulationInfomation[4]
                 wKuriageSueokiRisoku = wKuriageSueokiRisoku + hensaiSimulationInfomation[5]
