@@ -164,7 +164,7 @@ class Scholarship
                 #繰り上げ返済対象の返済情報を１件取得する。
                 hensaiSimulationInfomation = hensaiSimulationInfomationArray[i].clone
                 #繰り上げ返済が不可能になった時、繰り上げ返済可能金額の算出を終了する。
-                if kuriageKingaku < hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
+                if kuriageKingaku < hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5] + hensaiSimulationInfomation[7]
                     endFLG = 0
                     break
                 end
@@ -364,6 +364,7 @@ class Scholarship
         sheet[1, 6] = "利息"
         sheet[1, 7] = "端数金額"
         sheet[1, 8] = "奨学金引落後残額"
+        #sheet[1, 9] = "繰り上げ済フラグ"
 
         #繰り上げフラグ
         kuriageFLG = 0
