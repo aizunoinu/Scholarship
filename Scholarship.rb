@@ -2,6 +2,7 @@
 
 require "rubygems"
 require "spreadsheet"
+require "rubyxl"
 require "date"
 
 #奨学金クラス
@@ -164,7 +165,8 @@ class Scholarship
                 #繰り上げ返済対象の返済情報を１件取得する。
                 hensaiSimulationInfomation = hensaiSimulationInfomationArray[i].clone
                 #繰り上げ返済が不可能になった時、繰り上げ返済可能金額の算出を終了する。
-                if kuriageKingaku < hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5] + hensaiSimulationInfomation[7]
+                if kuriageKingaku < hensaiSimulationInfomation[4] + hensaiSimulationInfomation[5]
+                                    + hensaiSimulationInfomation[7]
                     endFLG = 0
                     break
                 end
@@ -342,6 +344,12 @@ class Scholarship
         end
     end
 
+    #奨学金の返済シミュレーション結果を出力するメソッド
+    def outputWrite2
+        book = RubyXL::Workbook.new
+        sheet = book[0]
+        sheet.sheet_name = "奨学金返済計画表"
+    end
     #奨学金の返済シミュレーション結果を出力するメソッド
     def outputWrite
         #Excelファイルをインスタンス化する
