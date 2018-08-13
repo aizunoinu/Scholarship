@@ -344,13 +344,57 @@ class Scholarship
         end
     end
 
-    #奨学金の返済シミュレーション結果を出力するメソッド
+    #奨学金の返済シミュレーション結果をxlsx形式で出力するメソッド
     def outputWrite2
         book = RubyXL::Workbook.new
         sheet = book[0]
         sheet.sheet_name = "奨学金返済計画表"
+        sheet.add_cell(0, 0, "奨学金返済計画")
+        sheet.add_cell(1, 0, "残り回数")
+        sheet.add_cell(1, 1, "奨学金残額")
+        sheet.add_cell(1, 2, "奨学金引落日")
+        sheet.add_cell(1, 3, "返済金額")
+        sheet.add_cell(1, 4, "返済元金")
+        sheet.add_cell(1, 5, "据置利息")
+        sheet.add_cell(1, 6, "利息")
+        sheet.add_cell(1, 7, "端数金額")
+        sheet.add_cell(1, 8, "奨学金引落後残額")
+
+        #繰り上げフラグ
+        kuriageFLG = 0
+
+        for i in 0..@hensaiSimulationInfomationArray.size - 1
+            #インスタンス変数hensaiSimulationInfomatioArrayから返済情報を一つ取り出す
+            cell = sheet.add_cell(i + 2, 0, @hensaiSimulationInfomationArray[i][0])
+            cell = sheet.add_cell(i + 2, 1, @hensaiSimulationInfomationArray[i][1])
+            cell.set_number_format "¥#,##0"
+            cell = sheet.add_cell(i + 2, 2, @hensaiSimulationInfomationArray[i][2])
+            cell = sheet.add_cell(i + 2, 3, @hensaiSimulationInfomationArray[i][3])
+            cell.set_number_format "¥#,##0"
+            cell = sheet.add_cell(i + 2, 4, @hensaiSimulationInfomationArray[i][4])
+            cell.set_number_format "¥#,##0"
+            cell = sheet.add_cell(i + 2, 5, @hensaiSimulationInfomationArray[i][5])
+            cell.set_number_format "¥#,##0"
+            cell = sheet.add_cell(i + 2, 6, @hensaiSimulationInfomationArray[i][6])
+            cell.set_number_format "¥#,##0"
+            cell = sheet.add_cell(i + 2, 7, @hensaiSimulationInfomationArray[i][7])
+            cell.set_number_format "¥#,##0"
+            cell = sheet.add_cell(i + 2, 8, @hensaiSimulationInfomationArray[i][8])
+            cell.set_number_format "¥#,##0"
+            kuriageFLG = kuriageFLG + @hensaiSimulationInfomationArray[i][9]
+        end
+
+        #繰り上げが実行されている時
+        if kuriageFLG != 0 then
+            sheet.add_cell(i + 3, 2, "返済総額")
+            sheet.add_cell(i + 3, 3, "#{@kuriageTotalKingaku}円")
+            sheet.add_cell(i + 4, 2, "繰り上げ差額")
+            sheet.add_cell(i + 4, 3, "#{@nomalHensaiSogaku - @kuriageTotalKingaku}円")
+        end
+        book.write('Scholarship.xlsx')
     end
-    #奨学金の返済シミュレーション結果を出力するメソッド
+
+    #奨学金の返済シミュレーション結果をxls形式で出力するメソッド（非推奨）
     def outputWrite
         #Excelファイルをインスタンス化する
         book = Spreadsheet::Workbook.new
@@ -518,7 +562,7 @@ begin
     end
 
     #奨学金のシミュレーション結果を出力する。
-    scholarship.outputWrite
+    scholarship.outputWrite2
 rescue Interrupt
     puts
     puts "奨学金返済シミュレーションプログラムを終了します。"
