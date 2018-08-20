@@ -100,14 +100,6 @@ class Scholarship
         @hensaiSogaku * @getsuri * (1 + @getsuri) ** @hensaiKaisu / ((1 + @getsuri) ** @hensaiKaisu - 1)
     end
 
-    #奨学金の最低繰上げ金額を算出するメソッド
-    def getSaiteiKuriageKingaku
-        wLastInfo = @hensaiSimulationInfomationArray[@hensaiKaisu - 1]
-        wLastBeforeInfo = @hensaiSimulationInfomationArray[@hensaiKaisu - 2]
-        #最終回の返済金額と、最終回の１回前の返済金額を加算して、
-        @saiteiKuriageKingaku = ((wLastBeforeInfo[3] + wLastInfo[3]) * (1 + @getsuri)).to_i
-    end
-
     #奨学金の引き落とし日を算出するメソッド
     def getHensaiDate(hensaiDate)
         #奨学金の引き落とし日が日曜日の場合は翌日を奨学金の引き落とし日とする
@@ -246,7 +238,7 @@ class Scholarship
                 #奨学金の繰り上げ可能金額（２ヶ月分）を繰り上げできなくなったら、終了
                 if hensaiZankin <= @hensaigaku * 2 then
                     puts
-                    puts "奨学金の繰り上げ可能金額（#{@hensaigaku * 2}円）を下回りました。"
+                    puts "奨学金の繰り上げ可能金額（２ヶ月分の返済額）を下回りました。"
                     puts "繰り上げシミュレーションを終了します。"
                     puts
                     break
@@ -291,13 +283,13 @@ class Scholarship
                 errorFLG = 0
 
                 #入力された年と月と金額が数字以外の場合はエラーとする。
-                if kuriageYear !~ /^[0-9]+$/ || kuriageMonth !~ /^[0-9]+$/ || kuriageKingaku !~ /^[0-9]+$/ then
+                if kuriageYear =~ /^[0-9]+$/ || kuriageMonth =~ /^[0-9]+$/ || kuriageKingaku =~ /^[0-9]+$/ then
                     puts
                     puts "入力された値が不正です。もう一度入力してください"
                     errorFLG = 1
                 elsif kuriageKingaku < @hensaigaku * 2 then
                     puts
-                    puts "繰り上げ返済金額は最低でも #{@tukiHensaigaku * 2}円 が必要です。"
+                    puts "繰り上げ返済金額は最低でも２ヶ月分の月返済額が必要です。"
                     puts "もう一度入力してください"
                     errorFLG = 1
                 else
@@ -365,42 +357,55 @@ class Scholarship
         #(0,0)セルから(0,8)セルまで結合する
         sheet.merge_cells 0, 0, 0, 8
         cell = sheet.add_cell(0, 0, "奨学金返済計画")
-        #cell.change_border(:bottom, 'medium')
+        cell.change_horizontal_alignment
+        #cell.change_border(:bottom, 'thin')
 
         #表題の編集
         for i in 0..hyodaiArray.size - 1
-            sheet.add_cell(1, i, hyodaiArray[i])
+            cell = sheet.add_cell(1, i, hyodaiArray[i])
+            cell.change_horizontal_alignment
+            cell.change_border(:bottom, 'thin')
+            cell.change_border(:top, 'thin')
+            cell.change_border(:right, 'thin')
+            cell.change_border(:left, 'thin')
+            cell.change_fill("AFEEEE")
         end
 
         #繰り上げフラグ
         kuriageFLG = 0
 
         for i in 0..@hensaiSimulationInfomationArray.size - 1
-            cell = sheet.add_cell(i + 2, 0, @hensaiSimulationInfomationArray[i][0])
-            cell = sheet.add_cell(i + 2, 1, @hensaiSimulationInfomationArray[i][1])
-            cell.set_number_format "¥#,##0"
-            cell = sheet.add_cell(i + 2, 2, @hensaiSimulationInfomationArray[i][2])
-            cell = sheet.add_cell(i + 2, 3, @hensaiSimulationInfomationArray[i][3])
-            cell.set_number_format "¥#,##0"
-            cell = sheet.add_cell(i + 2, 4, @hensaiSimulationInfomationArray[i][4])
-            cell.set_number_format "¥#,##0"
-            cell = sheet.add_cell(i + 2, 5, @hensaiSimulationInfomationArray[i][5])
-            cell.set_number_format "¥#,##0"
-            cell = sheet.add_cell(i + 2, 6, @hensaiSimulationInfomationArray[i][6])
-            cell.set_number_format "¥#,##0"
-            cell = sheet.add_cell(i + 2, 7, @hensaiSimulationInfomationArray[i][7])
-            cell.set_number_format "¥#,##0"
-            cell = sheet.add_cell(i + 2, 8, @hensaiSimulationInfomationArray[i][8])
-            cell.set_number_format "¥#,##0"
+            for j in 0..8
+                cell = sheet.add_cell(i + 2, j, @hensaiSimulationInfomationArray[i][j])
+                cell.change_border(:bottom, 'thin')
+                cell.change_border(:top, 'thin')
+                cell.change_border(:right, 'thin')
+                cell.change_border(:left, 'thin')
+                if j == 1 || j  == 3 || j == 4 || j == 5 || j == 6 || j == 7 || j == 8 then
+                    cell.set_number_format "#,##0円"
+                end
+            end
             kuriageFLG = kuriageFLG + @hensaiSimulationInfomationArray[i][9]
         end
 
         #繰り上げが実行されている時
         if kuriageFLG != 0 then
-            sheet.add_cell(i + 3, 2, "返済総額")
-            sheet.add_cell(i + 3, 3, "#{@kuriageTotalKingaku}円")
-            sheet.add_cell(i + 4, 2, "繰り上げ差額")
-            sheet.add_cell(i + 4, 3, "#{@nomalHensaiSogaku - @kuriageTotalKingaku}円")
+            cell = sheet.add_cell(i + 3, 2, "返済総額")
+            cell.change_horizontal_alignment
+            cell = sheet.add_cell(i + 3, 3, @kuriageTotalKingaku)
+            cell.set_number_format "#,##0円"
+            cell.change_border(:bottom, 'thin')
+            cell.change_border(:top, 'thin')
+            cell.change_border(:right, 'thin')
+            cell.change_border(:left, 'thin')
+            cell = sheet.add_cell(i + 4, 2, "繰り上げ差額")
+            cell.change_horizontal_alignment
+            cell = sheet.add_cell(i + 4, 3, @nomalHensaiSogaku - @kuriageTotalKingaku)
+            cell.set_number_format "#,##0円"
+            cell.change_border(:bottom, 'thin')
+            cell.change_border(:top, 'thin')
+            cell.change_border(:right, 'thin')
+            cell.change_border(:left, 'thin')
         end
 
         #引数で指定したファイルへの書き出しを実施する。
@@ -426,7 +431,7 @@ class Scholarship
 
         #表題の編集
         for i in 0..hyodaiArray.size - 1
-            sheet[1, i] = hyodaiArray[i])
+            sheet[1, i] = hyodaiArray[i]
         end
 
         #繰り上げフラグ
@@ -434,17 +439,10 @@ class Scholarship
 
         #配列の中身をファイルに出力する
         for i in 0..@hensaiSimulationInfomationArray.size - 1
-            #インスタンス変数hensaiSimulationInfomationArrayから返済情報を一つ取り出す
-            sheet[i + 2, 0] = @hensaiSimulationInfomationArray[i][0]
-            sheet[i + 2, 1] = @hensaiSimulationInfomationArray[i][1]
-            sheet[i + 2, 2] = @hensaiSimulationInfomationArray[i][2]
-            sheet[i + 2, 3] = @hensaiSimulationInfomationArray[i][3]
-            sheet[i + 2, 4] = @hensaiSimulationInfomationArray[i][4]
-            sheet[i + 2, 5] = @hensaiSimulationInfomationArray[i][5]
-            sheet[i + 2, 6] = @hensaiSimulationInfomationArray[i][6]
-            sheet[i + 2, 7] = @hensaiSimulationInfomationArray[i][7]
-            sheet[i + 2, 8] = @hensaiSimulationInfomationArray[i][8]
-            kuriageFLG = kuriageFLG + @hensaiSimulationInfomationArray[i][9]
+            for j in 0..8
+                sheet[i + 2, j] = @hensaiSimulationInfomationArray[i][j]
+            end
+            kuriageFLG = kuriageFlg + @hensaiSimulationInfomationArray[i][9]
         end
 
         #繰り上げが実行されている時
