@@ -100,6 +100,14 @@ class Scholarship
         @hensaiSogaku * @getsuri * (1 + @getsuri) ** @hensaiKaisu / ((1 + @getsuri) ** @hensaiKaisu - 1)
     end
 
+    #奨学金の最低繰上げ金額を算出するメソッド
+    def getSaiteiKuriageKingaku
+        wLastInfo = @hensaiSimulationInfomationArray[@hensaiKaisu - 1]
+        wLastBeforeInfo = @hensaiSimulationInfomationArray[@hensaiKaisu - 2]
+        #最終回の返済金額と、最終回の１回前の返済金額を加算して、
+        @saiteiKuriageKingaku = ((wLastBeforeInfo[3] + wLastInfo[3]) * (1 + @getsuri)).to_i
+    end
+
     #奨学金の引き落とし日を算出するメソッド
     def getHensaiDate(hensaiDate)
         #奨学金の引き落とし日が日曜日の場合は翌日を奨学金の引き落とし日とする
@@ -410,18 +418,16 @@ class Scholarship
         #sheetに名前を設定する
         sheet.name = "奨学金返済計画表"
 
+        #表題を配列に保存する。
+        hyodaiArray = ["残り回数","奨学金残額","奨学金引落日","返済金額","返済元金","据置利息","利息","端数金額","奨学金引落後残額"]
+
         #Excelファイルに表題を出力する。
         sheet[0, 0] = "奨学金返済計画"
-        sheet[1, 0] = "残り回数"
-        sheet[1, 1] = "奨学金残額"
-        sheet[1, 2] = "奨学金引落日"
-        sheet[1, 3] = "返済金額"
-        sheet[1, 4] = "返済元金"
-        sheet[1, 5] = "据置利息"
-        sheet[1, 6] = "利息"
-        sheet[1, 7] = "端数金額"
-        sheet[1, 8] = "奨学金引落後残額"
-        #sheet[1, 9] = "繰り上げ済フラグ"
+
+        #表題の編集
+        for i in 0..hyodaiArray.size - 1
+            sheet[1, i] = hyodaiArray[i])
+        end
 
         #繰り上げフラグ
         kuriageFLG = 0
