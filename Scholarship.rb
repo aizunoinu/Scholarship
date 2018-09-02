@@ -28,20 +28,25 @@ class Scholarship
         @hensaiKaisu = @hensaiNensu * 12
 
         #奨学金の据置利息（卒業してから奨学金の返済が開始するまでにかかる利息）を求める
-        @totalSueokiRisoku = (self.getTotalSueokiRisoku + 1).to_i
-        @tukiSueokiRisoku = (@totalSueokiRisoku / @hensaiKaisu).to_i
-        @amariSueokiRisoku = (@totalSueokiRisoku - (@tukiSueokiRisoku * @hensaiKaisu)).to_i
+        wTotalSueokiRisoku = self.getTotalSueokiRisoku
+        wTukiSueokiRisoku = wTotalSueokiRisoku / @hensaiKaisu
+
+        #小数点付きの月据え置き利息から小数点以下を切り捨てしたものを月据え置き利息とする
+        @tukiSueokiRisoku = wTukiSueokiRisoku.to_i
+
+        #小数点付きの月据え置き利息から、小数点以下を切り捨てた月据え置き利息 * 返済回数を減算したものを据え置き利息の余りとする。
+        wAmariSueokiRisoku = wTotalSueokiRisoku - (@tukiSueokiRisoku * @hensaiKaisu)
 
         #奨学金の月返済額（据置利息以外）を求める
         wTukiHensaigaku = self.getTukiHensaigaku
         @tukiHensaigaku = wTukiHensaigaku.to_i
 
         #月返済額の小数点以下を取り出す
-        @amariTukiHensaigaku = wTukiHensaigaku - @tukiHensaigaku
-        @amariTukiHensaigaku = @amariTukiHensaigaku * @hensaiKaisu
+        wAmariTukiHensaigaku = wTukiHensaigaku - @tukiHensaigaku
+        wAmariTotalTukiHensaigaku = wAmariTukiHensaigaku * @hensaiKaisu
 
         #奨学金の計算に使用できなかった小数点以下を合計する
-        @amariGoukeigaku = (@amariTukiHensaigaku + @amariSueokiRisoku + 1).to_i
+        @amariGoukeigaku = (wAmariTotalTukiHensaigaku + wAmariSueokiRisoku).to_i
 
         #月に返済する金額を求める
         @hensaigaku = @tukiHensaigaku + @tukiSueokiRisoku
@@ -227,9 +232,9 @@ class Scholarship
 
     #繰り上げ返済を実施する場合、繰り上げ情報を入力するメソッド
     def inputKuriageHensaiInfomation
-        puts "********************************"
+        puts "*********************************"
         puts "奨学金の繰り上げ返済を行います。"
-        puts "********************************"
+        puts "*********************************"
 
         #繰り上げ返済の回数をカウントする。
         inputKuriageCount = 1
@@ -241,10 +246,10 @@ class Scholarship
                 #奨学金の繰り上げ可能金額（２ヶ月分）を繰り上げできなくなったら、終了
                 if hensaiZankin <= @hensaigaku * 2 && errorFLG == 0 then
                     puts
-                    puts "********************************************************"
+                    puts "**********************************************************"
                     puts "奨学金の繰り上げ可能金額（２ヶ月分の返済額）を下回りました。"
                     puts "繰り上げシミュレーションを終了します。"
-                    puts "********************************************************"
+                    puts "**********************************************************"
                     puts
                     break
                 end
@@ -258,10 +263,10 @@ class Scholarship
                         if sel == "Yes" || sel == "No" then
                             break
                         else
-                            puts "******************************"
+                            puts "********************************"
                             puts "YesとNo以外が入力されました。"
                             puts "入力をやり直してください。"
-                            puts "******************************"
+                            puts "********************************"
                         end
                     end
 
@@ -297,17 +302,17 @@ class Scholarship
 
                     if kuriageKingaku < @hensaigaku * 2 then
                         puts
-                        puts "*****************************************************"
+                        puts "*******************************************************"
                         puts "繰り上げ返済金額は最低でも２ヶ月分の月返済額が必要です。"
                         puts "もう一度入力してください"
-                        puts "*****************************************************"
+                        puts "*******************************************************"
                         errorFLG = 1
                     end
                 else
                     puts
-                    puts "**********************************************"
+                    puts "*************************************************"
                     puts "入力された値が不正です。もう一度入力してください"
-                    puts "**********************************************"
+                    puts "*************************************************"
                     errorFLG = 1
                 end
 
@@ -319,10 +324,10 @@ class Scholarship
                     #入力された繰り上げ年月が無効の場合はエラーとする
                     if kuriageHensaiKingaku < 0 then
                         puts
-                        puts "*********************************************************"
+                        puts "************************************************************"
                         puts "入力された繰り上げ年月と金額で繰り上げ返済シミュレーションを"
                         puts "実行することができません。もう一度入力してください。"
-                        puts "*********************************************************"
+                        puts "************************************************************"
                         errorFLG = 1
                     else
                         #繰り上げ返済可能金額と回数を表示する。
@@ -343,25 +348,25 @@ class Scholarship
                                 inputKuriageCount = inputKuriageCount + 1
                                 break
                             elsif sel == "No" then
-                                puts "****************************************"
+                                puts "********************************************"
                                 print "Noが入力されたので、入力を取り消します。\n"
-                                puts "****************************************"
+                                puts "********************************************"
                                 errorFLG = 1
                                 break
                             else
-                                puts "******************************************"
+                                puts "***********************************************"
                                 print "入力できる文字列は【Yes】と【No】のみです。\n"
                                 print "もう一度入力してください。\n"
-                                puts "******************************************"
+                                puts "***********************************************"
                             end
                         end
                     end
                 end
             rescue Interrupt #Control + Cが入力されたときの処理
                 puts
-                puts "**********************************************"
+                puts "**************************************************"
                 puts "繰り上げ返済シミュレーションが強制終了しました。"
-                puts "**********************************************"
+                puts "**************************************************"
                 break
             end
         end
@@ -611,9 +616,9 @@ begin
             break
         else
             puts
-            puts "****************************"
+            puts "*******************************"
             puts "入力された文字列が不正です。"
-            puts "****************************"
+            puts "*******************************"
         end
     end
 
@@ -621,7 +626,7 @@ begin
     scholarship.outputWrite2
 rescue Interrupt #Control + Cが入力されたときの処理
     puts
-    puts "************************************************"
+    puts "**************************************************"
     puts "奨学金返済シミュレーションプログラムを終了します。"
-    puts "************************************************"
+    puts "**************************************************"
 end
