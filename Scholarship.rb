@@ -28,7 +28,7 @@ class Scholarship
         @hensaiKaisu = @hensaiNensu * 12
 
         #奨学金の据置利息（卒業してから奨学金の返済が開始するまでにかかる利息）を求める
-        wTotalSueokiRisoku = self.getTotalSueokiRisoku
+        wTotalSueokiRisoku = (self.getTotalSueokiRisoku).to_i
         wTukiSueokiRisoku = wTotalSueokiRisoku / @hensaiKaisu
 
         #小数点付きの月据え置き利息から小数点以下を切り捨てしたものを月据え置き利息とする
@@ -44,6 +44,7 @@ class Scholarship
         #月返済額の小数点以下を取り出す
         wAmariTukiHensaigaku = wTukiHensaigaku - @tukiHensaigaku
         wAmariTotalTukiHensaigaku = wAmariTukiHensaigaku * @hensaiKaisu
+        wAmariTotalTukiHensaigaku = 0
 
         #奨学金の計算に使用できなかった小数点以下を合計する
         @amariGoukeigaku = (wAmariTotalTukiHensaigaku + wAmariSueokiRisoku).to_i
@@ -96,7 +97,7 @@ class Scholarship
     #奨学金の据置利息を算出するメソッド
     def getTotalSueokiRisoku
         #返済総額 * 年利（百分率） * 奨学金の貸与終了から返済開始までの日数180日 / 1年
-        @hensaiSogaku * (@nenri / 100) * 180.0 / 365
+        @hensaiSogaku * (@nenri / 100) * 180 / 365
     end
 
     #奨学金の月返済額（据置利息以外）を算出するメソッド
@@ -512,31 +513,15 @@ class Scholarship
 
             #Excelファイルに出力する情報を１行分編集する。
             hensaiSimulationInfomation = []
-            if hensaiCount == 0 then
+            if hensaiSogaku <= @hensaigaku then
                 hensaiSimulationInfomation << hensaiKaisu - hensaiCount
                 hensaiSimulationInfomation << hensaiSogaku
                 hensaiSimulationInfomation << "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
-                hensaiSimulationInfomation << (@hensaigaku + amariGoukeigaku / 2).to_i
-                hensaiSimulationInfomation << @hensaigaku - @tukiSueokiRisoku - risoku
-                hensaiSimulationInfomation << @tukiSueokiRisoku
-                hensaiSimulationInfomation << risoku
-                hensaiSimulationInfomation << (amariGoukeigaku / 2).to_i
-                hensaiSimulationInfomation << hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
-                hensaiSimulationInfomation << 0
-                @hensaiSimulationInfomationArray << hensaiSimulationInfomation
-                hensaiSogaku = hensaiSogaku - (@hensaigaku - @tukiSueokiRisoku - risoku)
-                hensaiCount = hensaiCount + 1
-                amariGoukeigaku = (amariGoukeigaku / 2).to_i + 1
-                hensaiDate = hensaiDate >> 1
-            elsif hensaiSogaku <= @hensaigaku then
-                hensaiSimulationInfomation << hensaiKaisu - hensaiCount
+                hensaiSimulationInfomation << hensaiSogaku + amariGoukeigaku
                 hensaiSimulationInfomation << hensaiSogaku
-                hensaiSimulationInfomation << "#{whensaiDate.year}年#{whensaiDate.month}月#{whensaiDate.day}日"
-                hensaiSimulationInfomation << @hensaigaku + amariGoukeigaku
-                hensaiSimulationInfomation << @hensaigaku - @tukiSueokiRisoku - risoku
                 hensaiSimulationInfomation << @tukiSueokiRisoku
                 hensaiSimulationInfomation << risoku
-                hensaiSimulationInfomation << amariGoukeigaku
+                hensaiSimulationInfomation << amariGoukeigaku - @tukiSueokiRisoku - risoku
                 hensaiSimulationInfomation << 0
                 hensaiSimulationInfomation << 0
                 @hensaiSimulationInfomationArray << hensaiSimulationInfomation
