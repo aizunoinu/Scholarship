@@ -4,6 +4,7 @@ require "rubygems"
 require "spreadsheet"
 require "rubyxl"
 require "date"
+require "bigdecimal"
 
 #奨学金クラス
 class Scholarship
@@ -30,12 +31,14 @@ class Scholarship
         #奨学金の据置利息（卒業してから奨学金の返済が開始するまでにかかる利息）を求める
         wTotalSueokiRisoku = (self.getTotalSueokiRisoku).to_i
         wTukiSueokiRisoku = wTotalSueokiRisoku / @hensaiKaisu
+        #wTukiSueokiRisoku = wTotalSueokiRisoku.to_f / @hensaiKaisu
 
         #小数点付きの月据え置き利息から小数点以下を切り捨てしたものを月据え置き利息とする
         @tukiSueokiRisoku = wTukiSueokiRisoku.to_i
 
         #小数点付きの月据え置き利息から、小数点以下を切り捨てた月据え置き利息 * 返済回数を減算したものを据え置き利息の余りとする。
         wAmariSueokiRisoku = wTotalSueokiRisoku - (@tukiSueokiRisoku * @hensaiKaisu)
+        #wAmariSueokiRisoku = wTotalSueokiRisoku - (wTukiSueokiRisoku * @hensaiKaisu)
 
         #奨学金の月返済額（据置利息以外）を求める
         wTukiHensaigaku = self.getTukiHensaigaku
@@ -98,6 +101,8 @@ class Scholarship
     def getTotalSueokiRisoku
         #返済総額 * 年利（百分率） * 奨学金の貸与終了から返済開始までの日数180日 / 1年
         @hensaiSogaku * (@nenri / 100) * 180 / 365
+        #@hensaiSogaku * BigDecimal((@nenri / 100).to_s).floor(4).to_f * 180 / 365
+        #puts "年利(100分率) = #{@nenri / 100}"
     end
 
     #奨学金の月返済額（据置利息以外）を算出するメソッド
