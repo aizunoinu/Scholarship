@@ -29,28 +29,17 @@ class Scholarship
         @hensaiKaisu = @hensaiNensu * 12
 
         #奨学金の据置利息（卒業してから奨学金の返済が開始するまでにかかる利息）を求める
-        wTotalSueokiRisoku = (self.getTotalSueokiRisoku).to_i
+        wTotalSueokiRisoku = self.getTotalSueokiRisoku
         wTukiSueokiRisoku = wTotalSueokiRisoku / @hensaiKaisu
-        #wTukiSueokiRisoku = wTotalSueokiRisoku.to_f / @hensaiKaisu
 
         #小数点付きの月据え置き利息から小数点以下を切り捨てしたものを月据え置き利息とする
         @tukiSueokiRisoku = wTukiSueokiRisoku.to_i
 
         #小数点付きの月据え置き利息から、小数点以下を切り捨てた月据え置き利息 * 返済回数を減算したものを据え置き利息の余りとする。
-        wAmariSueokiRisoku = wTotalSueokiRisoku - (@tukiSueokiRisoku * @hensaiKaisu)
-        #wAmariSueokiRisoku = wTotalSueokiRisoku - (wTukiSueokiRisoku * @hensaiKaisu)
+        @amariGoukeigaku = (wTotalSueokiRisoku - (@tukiSueokiRisoku * @hensaiKaisu)).to_i
 
         #奨学金の月返済額（据置利息以外）を求める
-        wTukiHensaigaku = self.getTukiHensaigaku
-        @tukiHensaigaku = wTukiHensaigaku.to_i
-
-        #月返済額の小数点以下を取り出す
-        wAmariTukiHensaigaku = wTukiHensaigaku - @tukiHensaigaku
-        wAmariTotalTukiHensaigaku = wAmariTukiHensaigaku * @hensaiKaisu
-        wAmariTotalTukiHensaigaku = 0
-
-        #奨学金の計算に使用できなかった小数点以下を合計する
-        @amariGoukeigaku = (wAmariTotalTukiHensaigaku + wAmariSueokiRisoku).to_i
+        @tukiHensaigaku = self.getTukiHensaigaku.to_i
 
         #月に返済する金額を求める
         @hensaigaku = @tukiHensaigaku + @tukiSueokiRisoku
