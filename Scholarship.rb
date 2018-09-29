@@ -411,21 +411,24 @@ class Scholarship
                 cell.change_border(:left, 'thin')
                 if j == 1 || j  == 3 || j == 4 || j == 5 || j == 6 || j == 7 || j == 8 then
                     cell.set_number_format "#,##0円"
+                elsif j == 0 then
+                    cell.set_number_format "#,##0回"
                 end
             end
             kuriageFLG = kuriageFLG + @hensaiSimulationInfomationArray[i][9]
         end
 
+        cell = sheet.add_cell(i + 3, 2, "返済総額")
+        cell.change_horizontal_alignment
+        cell = sheet.add_cell(i + 3, 3, @kuriageTotalKingaku)
+        cell.set_number_format "#,##0円"
+        cell.change_border(:bottom, 'thin')
+        cell.change_border(:top, 'thin')
+        cell.change_border(:right, 'thin')
+        cell.change_border(:left, 'thin')
+
         #繰り上げが実行されている時
         if kuriageFLG != 0 then
-            cell = sheet.add_cell(i + 3, 2, "返済総額")
-            cell.change_horizontal_alignment
-            cell = sheet.add_cell(i + 3, 3, @kuriageTotalKingaku)
-            cell.set_number_format "#,##0円"
-            cell.change_border(:bottom, 'thin')
-            cell.change_border(:top, 'thin')
-            cell.change_border(:right, 'thin')
-            cell.change_border(:left, 'thin')
             cell = sheet.add_cell(i + 4, 2, "繰り上げ差額")
             cell.change_horizontal_alignment
             cell = sheet.add_cell(i + 4, 3, @nomalHensaiSogaku - @kuriageTotalKingaku)
@@ -592,6 +595,7 @@ begin
             scholarship.getKuriageTotalKingaku
             break
         elsif sel == "No" then
+            scholarship.getKuriageTotalKingaku
             break
         else
             puts
